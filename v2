@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quilate — bancada técnica de pré-graduação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#0A0B0D; --ink2:#111317; --panel:#15171C; --panel2:#1C1F26;
+    --line:#262A32; --line2:#363B45;
+    --txt:#ECEEF2; --muted:#8A93A1; --faint:#5B6573;
+    --gold:#C9A227; --goldb:#E8C65C; --gold-dim:#5e4f1a;
+    --blue:#5AB0FF; --cyan:#39E0C4;
+    --green:#5BD08A; --amber:#F0A93B; --red:#F0705B;
+    --outer:#E8C65C; --inner:#5AB0FF;
+    --shadow:0 16px 50px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1100px 520px at 85% -8%, rgba(201,162,39,.07), transparent 60%),
+      radial-gradient(800px 480px at -10% 108%, rgba(90,176,255,.05), transparent 55%),
+      var(--ink);
+    color:var(--txt); font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:16px 16px 90px}
+
+  /* Header */
+  header{display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:6px 2px 4px}
+  .seal{width:46px; height:46px; border-radius:50%; flex:none; border:1.5px solid var(--gold);
+    display:grid; place-items:center; position:relative;
+    background:radial-gradient(circle at 50% 35%, rgba(201,162,39,.18), transparent 70%)}
+  .seal::before{content:""; position:absolute; inset:4px; border:1px solid rgba(201,162,39,.45); border-radius:50%}
+  .seal span{font-family:'Fraunces'; font-weight:600; color:var(--goldb); font-size:20px}
+  .brand h1{font-family:'Fraunces'; font-weight:600; font-size:24px; letter-spacing:.01em; line-height:1.05}
+  .brand p{color:var(--muted); font-size:11px; letter-spacing:.18em; text-transform:uppercase; margin-top:3px}
+  .hactions{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap}
+
+  .btn{font-family:'Inter'; font-size:13px; font-weight:600; color:var(--txt); background:var(--panel2);
+    border:1px solid var(--line2); border-radius:9px; padding:9px 13px; cursor:pointer; transition:.15s;
+    display:inline-flex; align-items:center; gap:7px; white-space:nowrap}
+  .btn:hover{border-color:var(--gold); color:#fff}
+  .btn:active{transform:translateY(1px)}
+  .btn svg{width:15px; height:15px}
+  .btn.gold{background:linear-gradient(135deg, var(--goldb), var(--gold)); color:#15120a; border:none; font-weight:700}
+  .btn.gold:hover{filter:brightness(1.06)}
+  .btn.sm{padding:7px 10px; font-size:12px}
+  input[type=file]{display:none}
+
+  .toast{position:fixed; top:14px; left:50%; transform:translateX(-50%) translateY(-80px); z-index:50;
+    background:var(--panel2); border:1px solid var(--line2); border-radius:10px; padding:10px 16px; font-size:13px;
+    box-shadow:var(--shadow); transition:transform .25s; max-width:90vw}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast.err{border-color:var(--red); color:#ffd9d2}
+
+  /* Section card */
+  section.card{background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); margin-top:16px; overflow:hidden}
+  .shead{display:flex; align-items:baseline; gap:12px; padding:16px 18px 0}
+  .shead .num{font-family:'JetBrains Mono'; font-size:12px; color:var(--gold); letter-spacing:.05em; padding-top:6px}
+  .shead h2{font-family:'Fraunces'; font-weight:600; font-size:21px; letter-spacing:.01em}
+  .sbody{padding:12px 18px 18px}
+  .sdesc{font-size:12.5px; color:var(--muted); line-height:1.55; margin:4px 0 14px; max-width:760px}
+  .sdesc .o{color:var(--goldb); font-weight:600}
+  .sdesc .i{color:var(--blue); font-weight:600}
+  .sdesc .r{color:var(--red); font-weight:600}
+
+  .grid2{display:grid; grid-template-columns:1fr 360px; gap:16px; align-items:start}
+  @media (max-width:900px){ .grid2{grid-template-columns:1fr} }
+
+  /* Identification */
+  .idgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:13px}
+  @media (max-width:720px){ .idgrid{grid-template-columns:1fr 1fr} }
+  @media (max-width:480px){ .idgrid{grid-template-columns:1fr} }
+  .field label{display:block; font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.04em; text-transform:uppercase; margin-bottom:6px}
+  .field .help{font-size:11px; color:var(--faint); margin-top:5px; line-height:1.4}
+  input[type=text], input[type=date], select, textarea{
+    width:100%; font-family:'Inter'; font-size:13.5px; color:var(--txt);
+    background:var(--ink2); border:1px solid var(--line2); border-radius:9px; padding:10px 11px}
+  input::placeholder, textarea::placeholder{color:var(--faint)}
+  input:focus, select:focus, textarea:focus{outline:none; border-color:var(--gold)}
+  select{cursor:pointer; font-weight:600}
+  textarea{resize:vertical; min-height:64px; line-height:1.5}
+
+  /* Stage */
+  .seg{display:inline-flex; background:var(--ink2); border:1px solid var(--line); border-radius:10px; padding:3px; gap:3px}
+  .seg button{border:none; background:transparent; color:var(--muted); font-family:'Inter'; font-weight:600; font-size:12.5px;
+    padding:7px 16px; border-radius:7px; cursor:pointer; transition:.15s}
+  .seg button.on{background:var(--panel2); color:var(--txt)}
+  .seg button.on.gold{color:var(--goldb)}
+
+  .stagetop{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px}
+  .stage{position:relative; width:100%; aspect-ratio:4/3;
+    background:repeating-conic-gradient(#0d1014 0% 25%, #0a0c10 0% 50%) 50% / 26px 26px, var(--ink2);
+    border:1px solid var(--line); border-radius:12px; overflow:hidden; touch-action:none}
+  .stage canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+  .empty{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; text-align:center; padding:24px; color:var(--faint); pointer-events:none}
+  .empty .big{font-family:'Fraunces'; font-size:16px; color:var(--muted); font-weight:600}
+  .empty .small{font-size:12px; max-width:300px; line-height:1.55}
+  .empty svg{width:40px; height:40px; opacity:.5}
+
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .zoomrow{display:flex; align-items:center; gap:10px; margin-top:12px; padding:11px 12px; background:var(--ink2); border:1px solid var(--line); border-radius:10px}
+  .zoomrow .lbl{font-size:12px; color:var(--muted); font-weight:600; white-space:nowrap}
+  .zoomrow input[type=range]{flex:1}
+  .cornbtns{display:flex; gap:6px; margin-top:10px}
+  .cornbtns button{flex:1; font-size:11px; padding:8px 4px; background:var(--ink2); border:1px solid var(--line2); border-radius:8px; color:var(--muted); cursor:pointer; font-weight:600; transition:.15s}
+  .cornbtns button:hover{border-color:var(--goldb); color:var(--txt)}
+
+  input[type=range]{-webkit-appearance:none; appearance:none; height:6px; border-radius:99px; background:var(--line2); outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--goldb); cursor:pointer; border:3px solid var(--ink); box-shadow:0 0 0 1px var(--gold)}
+  input[type=range]::-moz-range-thumb{width:15px; height:15px; border-radius:50%; background:var(--goldb); cursor:pointer; border:3px solid var(--ink)}
+  input[type=range].g9::-webkit-slider-thumb{background:var(--green); box-shadow:0 0 0 1px var(--green)}
+  input[type=range].g9::-moz-range-thumb{background:var(--green)}
+
+  .legend{display:flex; gap:16px; margin-top:10px; font-size:12px; color:var(--muted); flex-wrap:wrap}
+  .legend i{display:inline-block; width:18px; height:0; border-top:2px solid; vertical-align:middle; margin-right:6px}
+  .legend .o i{border-color:var(--outer)} .legend .n i{border-color:var(--inner)}
+
+  /* Readouts */
+  .read{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .gauge{background:var(--ink2); border:1px solid var(--line); border-radius:12px; padding:12px}
+  .gauge .lab{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-weight:600}
+  .gauge .val{font-family:'JetBrains Mono'; font-weight:700; font-size:25px; margin-top:4px; line-height:1}
+  .gauge .bar{height:6px; border-radius:99px; background:var(--line); margin-top:10px; overflow:hidden; position:relative}
+  .gauge .bar i{position:absolute; inset:0 auto 0 0; background:currentColor; border-radius:99px; transition:width .12s}
+  .gauge .dir{font-size:11px; color:var(--muted); margin-top:7px; height:14px}
+  .tilt{margin-top:10px; background:var(--ink2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center}
+  .tilt .l{font-size:12px; color:var(--muted)}
+  .tilt b{font-family:'JetBrains Mono'; font-weight:700}
+  .chips{display:flex; gap:8px; margin-top:10px}
+  .chip{background:var(--ink2); border:1px solid var(--line); border-radius:9px; padding:9px 8px; color:var(--muted); flex:1; text-align:center; font-size:11px}
+  .chip b{display:block; color:var(--txt); font-family:'JetBrains Mono'; font-weight:700; font-size:13px; margin-top:3px}
+
+  /* Pillars */
+  .pillar{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line)}
+  .pillar:last-child{border-bottom:none}
+  .pillar label{font-size:13.5px; font-weight:500}
+  .pillar label span{display:block; font-size:11px; color:var(--faint); margin-top:1px}
+  .pillar select{min-width:160px; background:var(--ink2)}
+
+  .suggest{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px}
+  @media (max-width:560px){ .suggest{grid-template-columns:1fr} }
+  .sg{border:1px solid var(--line2); border-radius:14px; padding:16px 14px; text-align:center; background:linear-gradient(180deg, rgba(255,255,255,.018), transparent)}
+  .sg .top{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); font-weight:600}
+  .sg .g{font-family:'Fraunces'; font-weight:600; font-size:46px; line-height:1.05; margin:8px 0 4px}
+  .sg .sub{font-size:12px; color:var(--muted); line-height:1.45}
+
+  /* ROI */
+  .roigrid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media (max-width:680px){ .roigrid{grid-template-columns:1fr} }
+  .money{position:relative}
+  .money::before{content:"R$"; position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:12px; color:var(--faint); font-family:'JetBrains Mono'}
+  input[type=number]{width:100%; font-family:'JetBrains Mono'; font-weight:500; font-size:14px; color:var(--txt);
+    background:var(--ink2); border:1px solid var(--line2); border-radius:9px; padding:10px 11px 10px 34px}
+  input[type=number]:focus{outline:none; border-color:var(--gold)}
+  .field{margin-bottom:11px}
+  .slider{margin-bottom:13px}
+  .slider .row{display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px}
+  .slider .row b{font-family:'JetBrains Mono'; color:var(--txt)}
+  .slider input[type=range]{width:100%}
+  .remain{font-size:12px; color:var(--muted); text-align:right; margin:-6px 0 13px}
+  .remain b{font-family:'JetBrains Mono'; color:var(--amber)}
+  .result{padding:15px; border-radius:12px; background:var(--ink2); border:1px solid var(--line)}
+  .result .ln{display:flex; justify-content:space-between; align-items:baseline}
+  .result .ln+.ln{padding-top:8px; margin-top:8px; border-top:1px solid var(--line)}
+  .result .ln span{font-size:13px; color:var(--muted)}
+  .result .ln b{font-family:'JetBrains Mono'; font-weight:700; font-size:18px}
+  .reco{margin-top:12px; padding:12px 14px; border-radius:10px; font-family:'Fraunces'; font-weight:600; font-size:15px; text-align:center; border:1px solid transparent}
+
+  /* Laudo */
+  .laudo{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media (max-width:680px){ .laudo{grid-template-columns:1fr} }
+
+  details.howto{margin-top:16px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:0 18px}
+  details.howto summary{cursor:pointer; padding:14px 0; font-family:'Fraunces'; font-weight:600; font-size:15px; color:var(--muted); list-style:none}
+  details.howto summary::-webkit-details-marker{display:none}
+  details.howto[open] summary{color:var(--txt)}
+  details.howto .inner{padding:0 0 16px; font-size:13px; color:var(--muted); line-height:1.65}
+  details.howto .inner h4{color:var(--txt); font-size:13px; margin:12px 0 4px; font-family:'Fraunces'}
+  details.howto code{font-family:'JetBrains Mono'; background:var(--ink2); padding:1px 6px; border-radius:5px; color:var(--goldb); font-size:12px}
+  .warn{color:var(--amber)}
+  .footnote{text-align:center; color:var(--faint); font-size:11.5px; margin-top:20px; line-height:1.6}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<div class="wrap">
+  <header>
+    <div class="seal"><span>Q</span></div>
+    <div class="brand">
+      <h1>Quilate</h1>
+      <p>Pré-graduação · bancada técnica</p>
+    </div>
+    <div class="hactions">
+      <button class="btn sm" id="btnClear">Limpar</button>
+      <button class="btn sm" id="btnSave">Salvar</button>
+      <label class="btn sm" for="loadInput">Carregar</label>
+      <button class="btn gold sm" id="btnPdf">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13a0 0 0 010 0H7a2 2 0 01-2-2V5a2 2 0 012-2z" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h4" stroke-linecap="round"/></svg>
+        Gerar relatório (PDF)
+      </label>
+      <input type="file" id="loadInput" accept="application/json,.json">
+    </div>
+  </header>
+
+  <!-- 01 IDENTIFICAÇÃO -->
+  <section class="card">
+    <div class="shead"><div class="num">01</div><h2>Identificação da carta</h2></div>
+    <div class="sbody">
+      <p class="sdesc">Dados básicos do colecionável e do cliente — entram no cabeçalho do relatório.</p>
+      <div class="idgrid">
+        <div class="field"><label>Carta / personagem</label><input type="text" id="idCard" placeholder="Ex.: Mewtwo VSTAR (144/S-P)"></div>
+        <div class="field"><label>Cliente</label><input type="text" id="idClient" placeholder="Nome do cliente"></div>
+        <div class="field"><label>Analista</label><input type="text" id="idAnalyst" placeholder="Responsável pela bancada"></div>
+        <div class="field"><label>Data da análise</label><input type="date" id="idDate"></div>
+        <div class="field">
+          <label>Tipo de carta</label>
+          <select id="idType"><option value="tcg">TCG (Pokémon, Magic…)</option><option value="sports">Esportiva</option></select>
+          <div class="help">Define a tolerância de verso na TAG.</div>
+        </div>
+        <div class="field"><label>Controle interno</label><input type="text" id="idCtrl" placeholder="LCC-001" ></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 CENTRALIZAÇÃO -->
+  <section class="card">
+    <div class="shead"><div class="num">02</div><h2>Centralização por arraste</h2></div>
+    <div class="sbody">
+      <p class="sdesc">Suba a foto e arraste as <span class="r">8 bolinhas dos cantos</span>. As <span class="o">linhas douradas</span> ligam os cantos externos (onde o papel termina) e as <span class="i">linhas azuis</span> os cantos internos (onde a arte começa). Como cada canto é livre, você encaixa carta torta e arte rotacionada <b>sem girar a foto</b> — a razão sai certa mesmo inclinada.</p>
+
+      <div class="grid2">
+        <div>
+          <div class="stagetop">
+            <div class="seg" id="sideSeg">
+              <button class="on" data-side="front">Frente</button>
+              <button data-side="back">Verso</button>
+            </div>
+            <div class="seg" id="modeSeg">
+              <button class="on" data-mode="measure">Medir cantos</button>
+              <button class="gold" data-mode="loupe">Lupa</button>
+            </div>
+          </div>
+
+          <div class="stage" id="stage">
+            <canvas id="cv"></canvas>
+            <div class="empty" id="empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="16" height="18" rx="2"/><rect x="8" y="7" width="8" height="6" rx="1"/><path d="M8 16h8M8 18.5h5"/></svg>
+              <div class="big">Suba uma foto da carta</div>
+              <div class="small">Luz difusa, sem flash, enquadrada. Não precisa estar perfeitamente reta — os cantos resolvem.</div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <label class="btn gold" for="fileInput">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v13m0-13l-4 4m4-4l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Carregar foto
+            </label>
+            <label class="btn" for="camInput">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 012-2h2l1.5-2h7L18 6h2a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" stroke-linejoin="round"/><circle cx="12" cy="12.5" r="3.2"/></svg>
+              Câmera
+            </label>
+            <button class="btn" id="btnReset">Reposicionar linhas</button>
+            <input type="file" id="fileInput" accept="image/*">
+            <input type="file" id="camInput" accept="image/*" capture="environment">
+          </div>
+
+          <div class="zoomrow" id="zoomRow" style="display:none">
+            <span class="lbl">Zoom da lupa</span>
+            <input type="range" id="loupeZoom" min="2" max="9" step="0.5" value="5">
+            <span class="lbl" id="loupeZoomV" style="font-family:'JetBrains Mono'">5×</span>
+          </div>
+          <div class="cornbtns" id="cornBtns" style="display:none">
+            <button data-c="tl">Canto ↖</button>
+            <button data-c="tr">Canto ↗</button>
+            <button data-c="bl">Canto ↙</button>
+            <button data-c="br">Canto ↘</button>
+          </div>
+
+          <div class="legend">
+            <span class="o"><i></i>Borda externa (papel)</span>
+            <span class="n"><i></i>Borda interna (arte)</span>
+          </div>
+        </div>
+
+        <!-- Readouts -->
+        <div>
+          <div class="read">
+            <div class="gauge" id="gLR"><div class="lab">Esquerda / Direita</div><div class="val">— / —</div><div class="bar"><i style="width:50%"></i></div><div class="dir"></div></div>
+            <div class="gauge" id="gTB"><div class="lab">Topo / Base</div><div class="val">— / —</div><div class="bar"><i style="width:50%"></i></div><div class="dir"></div></div>
+          </div>
+          <div class="tilt"><span class="l">Inclinação detectada <span id="tiltSide" style="color:var(--faint)"></span></span><b id="tiltVal">—</b></div>
+          <div class="chips">
+            <div class="chip">PSA · frente<b id="cPsaF">—</b></div>
+            <div class="chip">PSA · verso<b id="cPsaB">—</b></div>
+            <div class="chip">PSA · teto<b id="cPsa">—</b></div>
+          </div>
+          <div class="chips" style="margin-top:8px">
+            <div class="chip">TAG · frente<b id="cTagF">—</b></div>
+            <div class="chip">TAG · verso<b id="cTagB">—</b></div>
+            <div class="chip">TAG · teto<b id="cTag">—</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 INSPEÇÃO + ESTIMATE -->
+  <section class="card">
+    <div class="shead"><div class="num">03</div><h2>Inspeção & nota estimada</h2></div>
+    <div class="sbody">
+      <p class="sdesc">Centralização o app mede. Cantos, bordas e superfície são sua leitura na lupa (use o modo Lupa acima pra olhar de perto). A nota final ≈ o pior pilar.</p>
+      <div class="grid2">
+        <div>
+          <div class="pillar"><label>Cantos <span>pontas: desgaste, embranquecimento, amassado</span></label><select id="pCorners"></select></div>
+          <div class="pillar"><label>Bordas <span>laterais: whitening, lascado, corte</span></label><select id="pEdges"></select></div>
+          <div class="pillar"><label>Superfície <span>riscos, print lines, holo, vinco, mancha</span></label><select id="pSurface"></select></div>
+        </div>
+        <div>
+          <div class="suggest">
+            <div class="sg"><div class="top">Sugestão — PSA</div><div class="g" id="sgPsa">—</div><div class="sub" id="sgPsaSub">Suba a carta e avalie.</div></div>
+            <div class="sg"><div class="top">Sugestão — TAG</div><div class="g" id="sgTag">—</div><div class="sub" id="sgTagSub">Escala 1–1000.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 ROI -->
+  <section class="card">
+    <div class="shead"><div class="num">04</div><h2>Vale a pena enviar?</h2></div>
+    <div class="sbody">
+      <p class="sdesc">Conta de valor esperado sobre os preços de mercado da carta. As chances vêm semeadas da estimativa — ajuste à vontade.</p>
+      <div class="roigrid">
+        <div>
+          <div class="field"><label>Valor cru (sem graduar)</label><div class="money"><input type="number" id="vRaw" placeholder="0" min="0"></div></div>
+          <div class="field"><label>Valor em PSA 9</label><div class="money"><input type="number" id="v9" placeholder="0" min="0"></div></div>
+          <div class="field"><label>Valor em PSA 10</label><div class="money"><input type="number" id="v10" placeholder="0" min="0"></div></div>
+          <div class="field"><label>Valor se sair ≤ PSA 8</label><div class="money"><input type="number" id="vLow" placeholder="≈ valor cru" min="0"></div></div>
+          <div class="field"><label>Custo (graduação + envio)</label><div class="money"><input type="number" id="vCost" placeholder="0" min="0"></div></div>
+        </div>
+        <div>
+          <button class="btn sm" id="seedBtn" style="width:100%; justify-content:center; margin-bottom:14px">Usar a estimativa do app</button>
+          <div class="slider"><div class="row"><span>Chance de PSA 10</span><b id="p10v">55%</b></div><input type="range" id="p10" min="0" max="100" value="55"></div>
+          <div class="slider"><div class="row"><span>Chance de PSA 9</span><b id="p9v">30%</b></div><input type="range" class="g9" id="p9" min="0" max="100" value="30"></div>
+          <div class="remain">Chance de sair ≤ PSA 8: <b id="pLowv">15%</b></div>
+          <div class="result">
+            <div class="ln"><span>Valor esperado (já menos o custo)</span><b id="evOut">R$ —</b></div>
+            <div class="ln"><span>Ganho vs. manter cru</span><b id="netOut">R$ —</b></div>
+            <div class="reco" id="reco" style="background:var(--line); color:var(--muted)">Preencha os valores</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 LAUDO -->
+  <section class="card">
+    <div class="shead"><div class="num">05</div><h2>Laudo final</h2></div>
+    <div class="sbody">
+      <div class="laudo">
+        <div class="field"><label>Nota final (vai em destaque no relatório)</label><input type="text" id="ldFinal" placeholder="Ex.: PSA 10 / TAG 9.5"></div>
+        <div class="field"><label>Próximo passo sugerido</label><input type="text" id="ldNext" placeholder="Ex.: graduar agora na TAG / aguardar reprint"></div>
+      </div>
+      <div class="field" style="margin-top:4px"><label>Parecer técnico final</label><textarea id="ldNote" placeholder="Resumo da bancada: o que pesa a favor, o que observar, recomendação."></textarea></div>
+    </div>
+  </section>
+
+  <details class="howto">
+    <summary>▸ Como o app calcula (e o que ele não faz)</summary>
+    <div class="inner">
+      <h4>Centralização — por que cantos e não linhas retas</h4>
+      Cada lado é medido em vários pontos entre a borda do papel e a borda da arte. Como a razão é largura ÷ soma dos opostos, a inclinação se cancela: a carta pode estar torta que o número não distorce. A inclinação detectada é só informativa.
+      <h4>PSA (frente)</h4>
+      Lendo a faixa oficial com a folga de 5% pra nota 7+: <code>≤60/40 → 10</code> · <code>≤65/35 → 9</code> · <code>≤70/30 → 8</code> · <code>≤75/25 → 7</code>. Verso: <code>≤75/25 → 10</code>, bem mais tolerante.
+      <h4>TAG (1–1000)</h4>
+      Frente: <code>≤51/49 → Pristine</code> · <code>≤55/45 → 10</code> · <code>≤60/40 → 9</code> · daí em diante por meios pontos. Verso por tipo: TCG <code>~65/35 → 10</code>, esportiva <code>~70/30</code>. A nota vira pontos aproximados no relatório.
+      <h4>Nota final</h4>
+      A nota fica próxima do <b>pior</b> pilar, então o app pega o mínimo entre centralização, cantos, bordas e superfície.
+      <h4 class="warn">O que ele NÃO faz</h4>
+      <span class="warn">Cantos, bordas e superfície são a sua leitura — o app não enxerga risco nem print line por foto. Ele te dá a lupa pra olhar; o martelo é seu. E nenhum app prevê o lado subjetivo de cada graduadora. É triagem pra não queimar taxa, não veredito.</span>
+    </div>
+  </details>
+
+  <p class="footnote">Quilate · roda 100% no navegador, nenhuma imagem sai do aparelho · arquivo único pronto pro GitHub Pages</p>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const getCSS = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg, err){
+  const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (err?' err':'');
+  clearTimeout(toastT); toastT = setTimeout(()=> t.className = 'toast' + (err?' err':''), 2600);
+}
+
+/* ---------- grade tables ---------- */
+function psaCeil(w, side){
+  if(side==='back'){ if(w<=75)return 10; if(w<=90)return 9; if(w<=95)return 6; return 4; }
+  if(w<=60)return 10; if(w<=65)return 9; if(w<=70)return 8; if(w<=75)return 7;
+  if(w<=80)return 6; if(w<=85)return 5; if(w<=90)return 4; return 3;
+}
+function tagFront(w){
+  if(w<=51)return 10; if(w<=55)return 10; if(w<=57.5)return 9.5; if(w<=60)return 9;
+  if(w<=62.5)return 8.5; if(w<=65)return 8; if(w<=67.5)return 7.5; if(w<=70)return 7;
+  if(w<=75)return 6.5; if(w<=80)return 6; return 5;
+}
+function tagBack(w, type){
+  if(type==='sports'){ if(w<=70)return 10; if(w<=77)return 9.5; if(w<=83)return 9; if(w<=90)return 8; return 7; }
+  if(w<=65)return 10; if(w<=72)return 9.5; if(w<=78)return 9; if(w<=85)return 8; if(w<=92)return 7; return 6;
+}
+function isPristineFront(w){ return w<=51; }
+function tagPoints(g, pristine){
+  if(g>=10) return pristine ? 995 : 965;
+  const map={9.5:925,9:875,8.5:825,8:775,7.5:725,7:675,6.5:625,6:575,5:475};
+  return map[g] || Math.round(g*100-25);
+}
+function gradeColor(g){
+  if(g>=10)return getCSS('--gold'); if(g>=9)return getCSS('--green');
+  if(g>=8)return getCSS('--blue'); if(g>=7)return getCSS('--amber'); return getCSS('--red');
+}
+const fmtG = g => Number.isInteger(g) ? String(g) : g.toFixed(1);
+
+/* ---------- state ---------- */
+const DEF = () => ({
+  outer:{ tl:{x:.06,y:.05}, tr:{x:.94,y:.05}, br:{x:.94,y:.95}, bl:{x:.06,y:.95} },
+  inner:{ tl:{x:.16,y:.14}, tr:{x:.84,y:.14}, br:{x:.84,y:.86}, bl:{x:.16,y:.86} }
+});
+const state = {
+  img:null, imgURL:null, side:'front', mode:'measure',
+  sides:{ front:DEF(), back:DEF() },
+  evSeeded:false, lastPsaEst:null
+};
+const loupe = { on:false, x:0, y:0, z:5, r:80 };
+
+/* ---------- canvas ---------- */
+const stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
+let view = {dx:0,dy:0,dw:0,dh:0};
+
+function resize(){
+  const r = stage.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  loupe.r = Math.min(r.width, r.height) * 0.22;
+  loupe.x = Math.min(Math.max(loupe.x, loupe.r), r.width - loupe.r) || r.width/2;
+  loupe.y = Math.min(Math.max(loupe.y, loupe.r), r.height - loupe.r) || r.height/2;
+  draw();
+}
+function computeView(){
+  const r = stage.getBoundingClientRect();
+  if(!state.img){ view={dx:0,dy:0,dw:r.width,dh:r.height}; return; }
+  const ar = state.img.naturalWidth/state.img.naturalHeight, car = r.width/r.height;
+  let dw,dh;
+  if(ar>car){ dw=r.width; dh=r.width/ar; } else { dh=r.height; dw=r.height*ar; }
+  view = { dx:(r.width-dw)/2, dy:(r.height-dh)/2, dw, dh };
+}
+const mapPt = p => ({ x: view.dx + p.x*view.dw, y: view.dy + p.y*view.dh });
+
+function draw(){
+  const r = stage.getBoundingClientRect();
+  ctx.clearRect(0,0,r.width,r.height);
+  if(!state.img) return;
+  computeView();
+  ctx.drawImage(state.img, view.dx, view.dy, view.dw, view.dh);
+
+  const s = state.sides[state.side];
+  quad(s.outer, getCSS('--outer'), false);
+  quad(s.inner, getCSS('--inner'), true);
+  handles(s.outer, getCSS('--outer'));
+  handles(s.inner, getCSS('--inner'));
+
+  if(loupe.on) drawLoupe();
+}
+function quad(q, color, dashed){
+  const p = ['tl','tr','br','bl'].map(k=>mapPt(q[k]));
+  ctx.beginPath(); ctx.moveTo(p[0].x,p[0].y);
+  for(let i=1;i<4;i++) ctx.lineTo(p[i].x,p[i].y);
+  ctx.closePath();
+  ctx.lineWidth=2; ctx.strokeStyle=color; ctx.setLineDash(dashed?[7,5]:[]); ctx.stroke(); ctx.setLineDash([]);
+}
+function handles(q, color){
+  ['tl','tr','br','bl'].forEach(k=>{
+    const m = mapPt(q[k]);
+    ctx.beginPath(); ctx.arc(m.x,m.y,6,0,7); ctx.fillStyle=color; ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle=getCSS('--ink'); ctx.stroke();
+  });
+}
+function drawLoupe(){
+  const {x,y,z,r} = loupe;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.closePath(); ctx.clip();
+  ctx.fillStyle='#000'; ctx.fillRect(x-r,y-r,2*r,2*r);
+  const fx=(x-view.dx)/view.dw, fy=(y-view.dy)/view.dh;
+  const mw=view.dw*z, mh=view.dh*z;
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(state.img, x-fx*mw, y-fy*mh, mw, mh);
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.lineWidth=3; ctx.strokeStyle=getCSS('--goldb'); ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(x-11,y); ctx.lineTo(x+11,y); ctx.moveTo(x,y-11); ctx.lineTo(x,y+11); ctx.stroke();
+}
+
+/* ---------- geometry ---------- */
+const lerp = (a,b,t) => ({ x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t });
+function centering(side){
+  const o=state.sides[side].outer, i=state.sides[side].inner;
+  const ts=[0.18,0.34,0.5,0.66,0.82]; let l=0,r=0,tp=0,bt=0;
+  for(const t of ts){
+    l += lerp(i.tl,i.bl,t).x - lerp(o.tl,o.bl,t).x;
+    r += lerp(o.tr,o.br,t).x - lerp(i.tr,i.br,t).x;
+    tp += lerp(i.tl,i.tr,t).y - lerp(o.tl,o.tr,t).y;
+    bt += lerp(o.bl,o.br,t).y - lerp(i.bl,i.br,t).y;
+  }
+  const n=ts.length; l=Math.max(l/n,1e-4); r=Math.max(r/n,1e-4); tp=Math.max(tp/n,1e-4); bt=Math.max(bt/n,1e-4);
+  const lr=Math.max(l,r)/(l+r)*100, tb=Math.max(tp,bt)/(tp+bt)*100;
+  return { lr, tb, leftHeavy:l>=r, topHeavy:tp>=bt, worst:Math.max(lr,tb) };
+}
+function tilt(side){
+  const o=state.sides[side].outer;
+  const W=state.img?state.img.naturalWidth:1, H=state.img?state.img.naturalHeight:1;
+  const a1=Math.atan2((o.tr.y-o.tl.y)*H,(o.tr.x-o.tl.x)*W);
+  const a2=Math.atan2((o.br.y-o.bl.y)*H,(o.br.x-o.bl.x)*W);
+  return ((a1+a2)/2)*180/Math.PI;
+}
+
+/* ---------- interaction ---------- */
+let drag=null, loupeDrag=false;
+function local(e){ const r=stage.getBoundingClientRect(); const p=e.touches?e.touches[0]:e; return {x:p.clientX-r.left, y:p.clientY-r.top}; }
+function pickHandle(px,py){
+  const s=state.sides[state.side]; let best=null,bd=26;
+  for(const set of ['outer','inner']) for(const k of ['tl','tr','br','bl']){
+    const m=mapPt(s[set][k]); const d=Math.hypot(px-m.x,py-m.y);
+    if(d<bd){ bd=d; best={set,k}; }
+  }
+  return best;
+}
+stage.addEventListener('pointerdown', e=>{
+  if(!state.img) return;
+  const {x,y}=local(e); stage.setPointerCapture(e.pointerId);
+  if(loupe.on){ loupeDrag=true; loupe.x=x; loupe.y=y; draw(); return; }
+  drag=pickHandle(x,y);
+});
+stage.addEventListener('pointermove', e=>{
+  if(!state.img) return; const {x,y}=local(e);
+  if(loupeDrag){ const r=stage.getBoundingClientRect();
+    loupe.x=Math.min(Math.max(x,loupe.r),r.width-loupe.r); loupe.y=Math.min(Math.max(y,loupe.r),r.height-loupe.r); draw(); return; }
+  if(!drag) return;
+  let fx=(x-view.dx)/view.dw, fy=(y-view.dy)/view.dh;
+  fx=Math.min(Math.max(fx,-0.05),1.05); fy=Math.min(Math.max(fy,-0.05),1.05);
+  state.sides[state.side][drag.set][drag.k]={x:fx,y:fy};
+  draw(); recompute();
+});
+stage.addEventListener('pointerup', ()=>{ drag=null; loupeDrag=false; });
+stage.addEventListener('pointercancel', ()=>{ drag=null; loupeDrag=false; });
+
+/* ---------- readouts ---------- */
+function setGauge(id,p,side,dir,has){
+  const el=$(id), val=el.querySelector('.val'), bar=el.querySelector('.bar i'), d=el.querySelector('.dir');
+  if(!has){ val.textContent='— / —'; bar.style.width='50%'; el.style.color=getCSS('--line'); d.textContent=''; return; }
+  val.textContent = Math.round(p)+' / '+Math.round(100-p);
+  const col=gradeColor(psaCeil(p,side)); el.style.color=col; val.style.color=col;
+  bar.style.width=Math.min(100,p)+'%';
+  d.textContent = Math.round(p)===50 ? 'centralizado' : dir;
+}
+function recompute(){
+  const has=!!state.img, type=$('idType').value;
+  const cur=centering(state.side);
+  setGauge('gLR',cur.lr,state.side,cur.leftHeavy?'mais margem à esquerda':'mais margem à direita',has);
+  setGauge('gTB',cur.tb,state.side,cur.topHeavy?'mais margem em cima':'mais margem embaixo',has);
+  $('tiltSide').textContent = state.side==='front'?'(frente)':'(verso)';
+  $('tiltVal').textContent = has ? tilt(state.side).toFixed(1)+'°' : '—';
+
+  const fr=centering('front'), bk=centering('back');
+  const pF=has?psaCeil(fr.worst,'front'):null, pB=has?psaCeil(bk.worst,'back'):null;
+  const pC=(pF&&pB)?Math.min(pF,pB):null;
+  setChip('cPsaF',pF?'PSA '+pF:'—',pF); setChip('cPsaB',pB?'PSA '+pB:'—',pB); setChip('cPsa',pC?'PSA '+pC:'—',pC);
+
+  const tF=has?tagFront(fr.worst):null, tB=has?tagBack(bk.worst,type):null;
+  const tC=(tF!=null&&tB!=null)?Math.min(tF,tB):null;
+  setChip('cTagF',tF!=null?'TAG '+fmtG(tF):'—',tF); setChip('cTagB',tB!=null?'TAG '+fmtG(tB):'—',tB); setChip('cTag',tC!=null?'TAG '+fmtG(tC):'—',tC);
+
+  updateEstimate(pC, tC, fr.worst, has);
+}
+function setChip(id,txt,g){ const el=$(id); el.textContent=txt; el.style.color = g==null?getCSS('--muted'):gradeColor(g); }
+
+/* ---------- pillars ---------- */
+const POPTS=[{v:10,t:'Impecável (gem)'},{v:9,t:'Quase perfeito'},{v:8,t:'Leve desgaste'},{v:6,t:'Desgaste visível'},{v:4,t:'Dano evidente'}];
+['pCorners','pEdges','pSurface'].forEach(id=>{
+  const s=$(id); POPTS.forEach(o=>{const op=document.createElement('option');op.value=o.v;op.textContent=o.t;s.appendChild(op);});
+  s.value=10; s.addEventListener('change',recompute);
+});
+
+function updateEstimate(psaC, tagC, worstFront, has){
+  const gP=$('sgPsa'), sP=$('sgPsaSub'), gT=$('sgTag'), sT=$('sgTagSub');
+  if(!has || psaC==null){
+    gP.textContent='—'; gP.style.color=getCSS('--muted'); sP.textContent='Suba a carta e avalie.';
+    gT.textContent='—'; gT.style.color=getCSS('--muted'); sT.textContent='Escala 1–1000.';
+    state.lastPsaEst=null; return;
+  }
+  const c=+$('pCorners').value, e=+$('pEdges').value, s=+$('pSurface').value;
+  const pillarMin=Math.min(c,e,s);
+  // PSA
+  const estPsa=Math.min(psaC,pillarMin);
+  gP.textContent=estPsa; gP.style.color=gradeColor(estPsa);
+  const psaBandTop=Math.max(estPsa,psaC);
+  sP.innerHTML = `Faixa provável: ${estPsa<psaBandTop?estPsa+'–'+psaBandTop:estPsa}.<br>Teto por centralização: PSA ${psaC}.`;
+  state.lastPsaEst=estPsa;
+  // TAG
+  const estTag=Math.min(tagC,pillarMin);
+  const pristine = estTag>=10 && isPristineFront(worstFront) && pillarMin>=10;
+  gT.textContent=fmtG(estTag); gT.style.color=gradeColor(estTag);
+  const tagTop=Math.max(estTag,tagC);
+  const pts=tagPoints(estTag,pristine);
+  sT.innerHTML = `Faixa provável: ${estTag<tagTop?fmtG(estTag)+'–'+fmtG(tagTop):fmtG(estTag)} · ~${pts} pts${pristine?' (Pristine)':''}.<br>Teto por centralização: TAG ${fmtG(tagC)}.`;
+  if(!state.evSeeded) seedProb(estPsa);
+}
+
+/* ---------- ROI ---------- */
+const p10=$('p10'), p9=$('p9');
+function seedProb(est){ let a=2,b=18; if(est>=10){a=55;b=30;} else if(est===9){a=18;b=55;} else if(est===8){a=5;b=35;} p10.value=a; p9.value=b; syncProb(); }
+function syncProb(){ let a=+p10.value,b=+p9.value; if(a+b>100){b=100-a;p9.value=b;} const low=Math.max(0,100-a-b);
+  $('p10v').textContent=a+'%'; $('p9v').textContent=b+'%'; $('pLowv').textContent=low+'%'; calcROI(); }
+p10.addEventListener('input',()=>{state.evSeeded=true;syncProb();});
+p9.addEventListener('input',()=>{state.evSeeded=true;syncProb();});
+$('seedBtn').addEventListener('click',()=>{ if(state.lastPsaEst!=null){state.evSeeded=true;seedProb(state.lastPsaEst);} });
+['vRaw','v9','v10','vCost','vLow'].forEach(id=>$(id).addEventListener('input',calcROI));
+const num=id=>{const v=parseFloat($(id).value);return isNaN(v)?null:v;};
+const brl=n=>'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function calcROI(){
+  const raw=num('vRaw'),v9=num('v9'),v10=num('v10'),cost=num('vCost'); let low=num('vLow'); if(low===null)low=raw;
+  const ev=$('evOut'),net=$('netOut'),reco=$('reco');
+  if(v9===null||v10===null||cost===null||raw===null){ ev.textContent='R$ —';net.textContent='R$ —';
+    reco.textContent='Preencha os valores'; reco.style.background=getCSS('--line'); reco.style.color=getCSS('--muted'); return; }
+  const a=+p10.value/100,b=+p9.value/100,lo=Math.max(0,(100-+p10.value-+p9.value)/100);
+  const e=a*v10+b*v9+lo*(low||0)-cost, n=e-raw;
+  ev.textContent=brl(e); net.textContent=(n>=0?'+ ':'− ')+brl(Math.abs(n)).replace('R$ ','R$ ');
+  net.style.color=n>=0?getCSS('--green'):getCSS('--red');
+  let txt,bg;
+  if(n<=0){ txt='Não compensa — melhor manter cru ou achar cópia melhor'; bg=getCSS('--red'); }
+  else if(n<0.15*Math.max(raw,1)||n<cost*0.4){ txt='Limítrofe — margem apertada, decida pela liquidez'; bg=getCSS('--amber'); }
+  else { txt='Vale a pena enviar'; bg=getCSS('--green'); }
+  reco.textContent=txt; reco.style.background=bg; reco.style.color='#15120a';
+}
+
+/* ---------- image load ---------- */
+function loadImage(file){
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{ state.img=img; state.imgURL=ev.target.result; $('empty').style.display='none'; computeView(); draw(); recompute(); };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+$('fileInput').addEventListener('change',e=>loadImage(e.target.files[0]));
+$('camInput').addEventListener('change',e=>loadImage(e.target.files[0]));
+$('btnReset').addEventListener('click',()=>{ state.sides[state.side]=DEF(); draw(); recompute(); });
+
+/* ---------- side / mode ---------- */
+$('sideSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+  state.side=b.dataset.side; [...e.currentTarget.children].forEach(c=>c.classList.toggle('on',c===b)); draw(); recompute(); });
+$('modeSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return; setMode(b.dataset.mode); });
+function setMode(m){
+  state.mode=m; loupe.on=(m==='loupe');
+  [...$('modeSeg').children].forEach(c=>c.classList.toggle('on',c.dataset.mode===m));
+  $('zoomRow').style.display=loupe.on?'flex':'none';
+  $('cornBtns').style.display=loupe.on?'flex':'none';
+  if(loupe.on && (!loupe.x||!loupe.y)){ const r=stage.getBoundingClientRect(); loupe.x=r.width/2; loupe.y=r.height/2; }
+  draw();
+}
+$('loupeZoom').addEventListener('input',e=>{ loupe.z=+e.target.value; $('loupeZoomV').textContent=loupe.z+'×'; draw(); });
+$('cornBtns').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||!state.img)return;
+  if(!loupe.on) setMode('loupe');
+  const m=mapPt(state.sides[state.side].outer[b.dataset.c]); loupe.x=m.x; loupe.y=m.y; loupe.z=7;
+  $('loupeZoom').value=7; $('loupeZoomV').textContent='7×'; draw(); });
+
+/* ---------- card type ---------- */
+$('idType').addEventListener('change',recompute);
+
+/* ---------- save / load / clear ---------- */
+function snapshot(){
+  return { app:'quilate', v:2,
+    ids:{ card:$('idCard').value, client:$('idClient').value, analyst:$('idAnalyst').value, date:$('idDate').value, type:$('idType').value, ctrl:$('idCtrl').value },
+    sides:state.sides, pillars:{c:$('pCorners').value,e:$('pEdges').value,s:$('pSurface').value},
+    roi:{ raw:$('vRaw').value, v9:$('v9').value, v10:$('v10').value, low:$('vLow').value, cost:$('vCost').value, p10:p10.value, p9:p9.value, seeded:state.evSeeded },
+    laudo:{ final:$('ldFinal').value, next:$('ldNext').value, note:$('ldNote').value },
+    img:state.imgURL || null };
+}
+$('btnSave').addEventListener('click',()=>{
+  try{
+    const data=snapshot();
+    const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+    const a=document.createElement('a');
+    const name=(data.ids.card||'carta').replace(/[^\w\-]+/g,'_').slice(0,40);
+    a.href=URL.createObjectURL(blob); a.download='Quilate_'+name+'.json'; a.click();
+    URL.revokeObjectURL(a.href); toast('Caso salvo em arquivo.');
+  }catch(err){ toast('Não foi possível salvar. Tente de novo.',true); }
+});
+$('loadInput').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d || d.app!=='quilate') throw 0;
+      const ids=d.ids||{};
+      $('idCard').value=ids.card||''; $('idClient').value=ids.client||''; $('idAnalyst').value=ids.analyst||'';
+      $('idDate').value=ids.date||''; $('idType').value=ids.type||'tcg'; $('idCtrl').value=ids.ctrl||'';
+      if(d.sides && d.sides.front && d.sides.back) state.sides=d.sides;
+      if(d.pillars){ $('pCorners').value=d.pillars.c; $('pEdges').value=d.pillars.e; $('pSurface').value=d.pillars.s; }
+      if(d.roi){ $('vRaw').value=d.roi.raw||''; $('v9').value=d.roi.v9||''; $('v10').value=d.roi.v10||'';
+        $('vLow').value=d.roi.low||''; $('vCost').value=d.roi.cost||''; p10.value=d.roi.p10||55; p9.value=d.roi.p9||30; state.evSeeded=!!d.roi.seeded; }
+      if(d.laudo){ $('ldFinal').value=d.laudo.final||''; $('ldNext').value=d.laudo.next||''; $('ldNote').value=d.laudo.note||''; }
+      const finish=()=>{ syncProb(); draw(); recompute(); toast('Caso carregado.'); };
+      if(d.img){ const img=new Image(); img.onload=()=>{ state.img=img; state.imgURL=d.img; $('empty').style.display='none'; finish(); }; img.src=d.img; }
+      else { state.img=null; state.imgURL=null; $('empty').style.display='flex'; finish(); }
+    }catch(err){ toast('Arquivo inválido — use um .json salvo pelo Quilate.',true); }
+    e.target.value='';
+  };
+  reader.readAsText(f);
+});
+$('btnClear').addEventListener('click',()=>{
+  state.sides={front:DEF(),back:DEF()}; state.img=null; state.imgURL=null; state.evSeeded=false; state.lastPsaEst=null;
+  ['idCard','idClient','idAnalyst','idDate','idCtrl','vRaw','v9','v10','vLow','vCost','ldFinal','ldNext','ldNote'].forEach(i=>$(i).value='');
+  $('idType').value='tcg'; $('pCorners').value=10; $('pEdges').value=10; $('pSurface').value=10;
+  p10.value=55; p9.value=30; $('empty').style.display='flex';
+  setMode('measure'); syncProb(); draw(); recompute(); toast('Bancada limpa.');
+});
+
+/* ---------- PDF ---------- */
+$('btnPdf').addEventListener('click',()=>{
+  const JS = window.jspdf && window.jspdf.jsPDF;
+  if(!JS){ toast('Gerador de PDF não carregou (sem internet?).',true); return; }
+  try{
+    const doc=new JS({unit:'mm',format:'a4'}); const W=210; let y=18;
+    const gold=[201,162,39], dark=[20,22,26], gray=[120,128,140];
+    doc.setFillColor(...dark); doc.rect(0,0,W,30,'F');
+    doc.setTextColor(...gold); doc.setFont('times','bold'); doc.setFontSize(20); doc.text('QUILATE',14,17);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(200,200,200);
+    doc.text('PRÉ-GRADUAÇÃO · BANCADA TÉCNICA',14,23);
+    const ctrl=$('idCtrl').value||'—'; doc.text('Controle: '+ctrl,W-14,17,{align:'right'});
+    doc.text(new Date().toLocaleDateString('pt-BR'),W-14,23,{align:'right'});
+    y=42;
+    const line=(label,val)=>{ doc.setTextColor(...gray); doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.text(label.toUpperCase(),14,y);
+      doc.setTextColor(30,30,30); doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.text(val||'—',14,y+5); y+=13; };
+    const col2=(l1,v1,l2,v2)=>{ doc.setTextColor(...gray); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+      doc.text(l1.toUpperCase(),14,y); doc.text(l2.toUpperCase(),110,y);
+      doc.setTextColor(30,30,30); doc.setFont('helvetica','normal'); doc.setFontSize(11);
+      doc.text(v1||'—',14,y+5); doc.text(v2||'—',110,y+5); y+=13; };
+
+    line('Carta / personagem', $('idCard').value);
+    col2('Cliente',$('idClient').value,'Analista',$('idAnalyst').value);
+
+    // image
+    if(state.imgURL){
+      try{
+        const iw=state.img.naturalWidth, ih=state.img.naturalHeight, boxW=60, boxH=boxW*ih/iw;
+        doc.addImage(state.imgURL, 'JPEG', W-14-boxW, 40, boxW, Math.min(boxH,80));
+      }catch(e){}
+    }
+
+    y+=2; doc.setDrawColor(220,220,220); doc.line(14,y,W-14,y); y+=8;
+    doc.setFont('times','bold'); doc.setTextColor(...dark); doc.setFontSize(13); doc.text('Resultado',14,y); y+=8;
+
+    const fr=centering('front'), bk=centering('back');
+    const grades=[
+      ['Nota final', $('ldFinal').value || ($('sgPsa').textContent+' / TAG '+$('sgTag').textContent)],
+      ['Centralização frente', Math.round(fr.lr)+'/'+Math.round(100-fr.lr)+'  (E/D) · '+Math.round(fr.tb)+'/'+Math.round(100-fr.tb)+'  (T/B)'],
+      ['Centralização verso', Math.round(bk.lr)+'/'+Math.round(100-bk.lr)+'  (E/D) · '+Math.round(bk.tb)+'/'+Math.round(100-bk.tb)+'  (T/B)'],
+      ['Cantos / Bordas / Superfície', sel('pCorners')+' / '+sel('pEdges')+' / '+sel('pSurface')],
+      ['Próximo passo', $('ldNext').value]
+    ];
+    grades.forEach(g=>line(g[0],g[1]));
+
+    const note=$('ldNote').value;
+    if(note){ doc.setDrawColor(220,220,220); doc.line(14,y,W-14,y); y+=8;
+      doc.setFont('times','bold'); doc.setTextColor(...dark); doc.setFontSize(13); doc.text('Parecer técnico',14,y); y+=7;
+      doc.setFont('helvetica','normal'); doc.setTextColor(40,40,40); doc.setFontSize(10);
+      doc.text(doc.splitTextToSize(note, W-28), 14, y); }
+
+    doc.setFontSize(7); doc.setTextColor(...gray);
+    doc.text('Estimativa técnica de bancada — não é garantia da graduadora.', 14, 287);
+    const name=($('idCard').value||'carta').replace(/[^\w\-]+/g,'_').slice(0,40);
+    doc.save('Laudo_Quilate_'+name+'.pdf'); toast('Relatório gerado.');
+  }catch(err){ toast('Falha ao gerar o PDF.',true); }
+});
+const sel=id=>{ const s=$(id); return s.options[s.selectedIndex].text.replace(/\s*\(.*\)/,''); };
+
+/* ---------- boot ---------- */
+new ResizeObserver(resize).observe(stage);
+$('idDate').value = new Date().toISOString().slice(0,10);
+resize(); recompute(); syncProb();
+</script>
+</body>
+</html>
